@@ -22,7 +22,12 @@ class LedReactor : public SimpleSerialBase {
         LedReactor();
         LedReactor(LedWriter&);
         ~LedReactor();
-        static void init(uint8_t redPin=15, uint8_t greenPin=13, uint8_t bluePin=12, uint8_t resolution=15);
+        static void init(
+                uint8_t redPin=15,
+                uint8_t greenPin=13,
+                uint8_t bluePin=12,
+                uint8_t resolution=15
+            );
         static void stop();
         static void restart();
         static void monitorMesh();

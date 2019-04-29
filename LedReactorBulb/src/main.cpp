@@ -17,6 +17,7 @@
 */
 
 /*
+TODO:
     switch to paho mqtt
         ssl/tls
 */
@@ -32,8 +33,8 @@ LedReactor reactor;
 
 void setup()
 {
-    Serial.begin(921600);
-    LedReactor::verbose = true;
+    // Serial.begin(921600);
+    // LedReactor::verbose = true;
     LedReactor::init(15, 13, 12, 10);
 }
 
