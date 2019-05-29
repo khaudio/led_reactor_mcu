@@ -21,20 +21,15 @@ TODO:
     switch to paho mqtt
         ssl/tls
 */
- 
+
 #include "LedReactor.h"
 
 LedReactor reactor;
 
-// template <typename T>
-// T max(T first, double second) {
-//     return static_cast<double>(first) > second ? first : second;
-// }
-
 void setup()
 {
-    // Serial.begin(921600);
-    // LedReactor::verbose = true;
+    Serial.begin(921600);
+    reactor.verbose = true;
     LedReactor::init(15, 13, 12, 10);
 }
 

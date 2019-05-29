@@ -2,7 +2,7 @@
 #define LEDREACTOR_H
 
 #include <painlessMesh.h>
-#include "LedWriter.h"
+#include <LedWriter.h>
 
 // Mesh network information
 #define MESH_PREFIX     "reactor"
@@ -10,13 +10,13 @@
 #define MESH_SUBGROUP   "0x0000"
 #define MESH_PORT       20002
 
+// Prevent LedWriter from running itself
+#define USE_TASKS       false
+
 class LedReactor : public SimpleSerialBase {
     public:
-        static TaskHandle_t meshUpdater, ledUpdater, statusUpdater;
-        static SemaphoreHandle_t semaphore;
-        static const TickType_t maxWaitTime = 100;
-        static bool verbose, connected, reset, multicore;
-        static uint32_t statusIndex, meshBridge;
+        static bool verbose, connected, reset;
+        static uint32_t statusIndex;
         static painlessMesh mesh;
         static LedWriter* writer;
         LedReactor();

@@ -1,13 +1,13 @@
 {
     "name": "LedReactorBulb",
     "keywords": "led, light, rgb, wirless, ethernet, mesh",
-    "description": "Effects framework for granular color control of RGB LEDs connected to ESP32 and ESP8266 devices.",
+    "description": "Effects framework for remote color control of RGB LEDs connected to ESP32 and ESP8266 devices.",
     "repository":
     {
         "type": "git",
         "url": "https://github.com/khaudio/led_reactor_mcu/LedReactorBulb.git"
     },
-    "version": "0.1.0",
+    "version": "0.1.1",
     "frameworks": "arduino",
     "platforms": "espressif8266, espressif32",
     "dependencies": [
@@ -24,6 +24,10 @@
         },
         {
             "name": "painlessMesh",
+            "platforms": "espressif8266, espressif32"
+        },
+        {
+            "name": "LedWriter",
             "platforms": "espressif8266, espressif32"
         }
     ],

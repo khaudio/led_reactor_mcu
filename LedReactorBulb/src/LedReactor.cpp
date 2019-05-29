@@ -5,16 +5,8 @@ LedWriter* LedReactor::writer = nullptr;
 bool
     LedReactor::verbose = false,
     LedReactor::connected = false,
-    LedReactor::reset = false,
-    LedReactor::multicore = false;
-uint32_t
-    LedReactor::statusIndex = 0,
-    LedReactor::meshBridge = 0;
-TaskHandle_t
-    LedReactor::meshUpdater,
-    LedReactor::ledUpdater,
-    LedReactor::statusUpdater;
-SemaphoreHandle_t LedReactor::semaphore = nullptr;
+    LedReactor::reset = false;
+uint32_t LedReactor::statusIndex = 0;
 
 LedReactor::LedReactor() {}
 
@@ -60,11 +52,9 @@ void LedReactor::init(uint8_t redPin, uint8_t greenPin, uint8_t bluePin, uint8_t
     writer->verbose = verbose;
     mesh.onReceive(&LedReactor::receiveMesh);
     prints("Initialized LedReactor");
-    // mesh.onNodeTimeAdjusted(&LedReactor::sync);
     mesh.onChangedConnections(&LedReactor::monitorMesh);
-    // if (multicore) {
-    //     startMulticoreTasks();
-    // }
+    // mesh.onNodeTimeAdjusted(&LedReactor::sync);
+    // xTaskCreate(updateLeds, "ledUpdater", 40000, NULL, 1, NULL);
 }
 
 void LedReactor::sync(int32_t offset) {
@@ -100,10 +90,13 @@ void LedReactor::parseMessage(const char* json) {
             prints("");
         }
         if (parser["restart"]) {
+            prints("Restarting...");
             restart();
         }
         if (parser["clear"]) {
+            prints("Clearing...");
             writer->clearEffects(true);
+            prints("Cleared");
         }
         if (parser["test"]) {
             prints("Test message received");
@@ -119,10 +112,14 @@ void LedReactor::parseMessage(const char* json) {
             writer->verbose = lastWriter;
         }
         if (parser["save"]) {
+            prints("Saving...");
             writer->save();
+            prints("Saved");
         }
         if (parser["recall"]) {
+            prints("Recalling...");
             writer->recall();
+            prints("Recalled");
         }
         if (effect.success()) {
             prints("Parsing effect...");
@@ -206,86 +203,33 @@ void LedReactor::receiveMesh(const uint32_t& sender, const String& message) {
     // Callback for messages received by mesh network
     prints("Receiving...");
     parseMessage(message.c_str());
+    prints("Received");
 }
 
-// void LedReactor::startMulticoreTasks() {
-//     prints("Creating tasks");
-//     semaphore = xSemaphoreCreateBinary();
-//     xTaskCreatePinnedToCore(
-//             LedReactor::updateMesh, "updateMesh", 10000, nullptr, 2, &meshUpdater, 0
-//         );
-//     xTaskCreatePinnedToCore(
-//             LedReactor::updateLeds, "updateLeds", 10000, nullptr, 2, &ledUpdater, 1
-//         );
-//     // xTaskCreatePinnedToCore(
-//     //         LedReactor::updateStatus, "updateStatus", 10000, nullptr, 1, &statusUpdater, 1
-//     //     );
-//     prints("Tasks created");
-// }
-
-
-// void LedReactor::updateMesh(void* parameter) {
-//     while (true) {
-//         if (xSemaphoreTake(semaphore, portMAX_DELAY) == pdTRUE) {
-//             prints("Updating mesh");
-//             mesh.update();
-//             xSemaphoreGive(semaphore);
-//         } else {
-//             prints("Mesh could not get semaphore");
-//         }
-//         vTaskDelay(1000);
-//     }
-// }
-
-// void LedReactor::updateLeds(void* parameter) {
-//     while (true) {
-//         if (xSemaphoreTake(semaphore, portMAX_DELAY) == pdTRUE) {
-//             prints("Updating LedWriter");
-//             uint32_t timeIndex = mesh.getNodeTime();
-//             writer->updateClock(&timeIndex);
-//             writer->run();
-//             xSemaphoreGive(semaphore);
-//         } else {
-//             prints("LedWriter could not get semaphore");
-//         }
-//         vTaskDelay(1000);
-//     }
-// }
-// void LedReactor::updateStatus(void* parameter) {
-//     while (true) {
-//         if (
-//                 (verbose && (++statusIndex % 500000 == 0))
-//                 && (xSemaphoreTake(semaphore, static_cast<TickType_t>(100)) == pdTRUE)
-//             ) {
-//             status();
-//             xSemaphoreGive(semaphore);
-//         } else {
-//             prints("Status updater could not get semaphore");
-//         }
-//         vTaskDelay(100000);
-//     }
-// }
-
-void LedReactor::run() {
-    // Runs necessary processes; required loop for operation.
-    // if (!multicore) {
-        mesh.update();
+void LedReactor::updateLeds(void* parameter) {
+    while (true) {
         uint32_t timeIndex = mesh.getNodeTime();
         writer->updateClock(&timeIndex);
         writer->run();
-        if (verbose && ++statusIndex % 1000000 == 0) {
-            status();
-        }
-    // } else {
-    //     vTaskSuspend(NULL);
-    // }
+        vTaskDelay(2);
+    }
+}
+
+void LedReactor::run() {
+    // Runs necessary processes; required loop for operation.
+    mesh.update();
+    if (verbose && ++statusIndex % 1000000 == 0) {
+        status();
+    }
+    
+    uint32_t timeIndex = mesh.getNodeTime();
+    writer->updateClock(&timeIndex);
+    writer->run();
 }
 
 void LedReactor::status() {
     // Outputs status
-    if (verbose) {
-        writer->status();
-        sout << "Mesh Time: " << mesh.getNodeTime() << "\t";
-        sout << "Memory free: " << ESP.getFreeHeap() << std::endl;
-    }
+    writer->status();
+    sout << "Mesh Time: " << mesh.getNodeTime() << "\t";
+    sout << "Memory free: " << ESP.getFreeHeap() << std::endl;
 }
