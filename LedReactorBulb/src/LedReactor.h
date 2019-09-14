@@ -18,15 +18,16 @@ class LedReactor : public SimpleSerialBase {
         static bool verbose, connected, reset;
         static uint32_t statusIndex;
         static painlessMesh mesh;
-        static LedWriter* writer;
+        static LedWriter<4>* writer;
         LedReactor();
-        LedReactor(LedWriter&);
+        LedReactor(LedWriter<4>&);
         ~LedReactor();
         static void init(
-                uint8_t redPin=15,
-                uint8_t greenPin=13,
-                uint8_t bluePin=12,
-                uint8_t resolution=15
+                uint8_t redPin=13,
+                uint8_t greenPin=12,
+                uint8_t bluePin=15,
+                uint8_t whitePin=27,
+                uint8_t resolution=10
             );
         static void stop();
         static void restart();

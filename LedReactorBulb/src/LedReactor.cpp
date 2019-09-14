@@ -1,7 +1,7 @@
 #include "LedReactor.h"
 
 painlessMesh LedReactor::mesh;
-LedWriter* LedReactor::writer = nullptr;
+LedWriter<4>* LedReactor::writer = nullptr;
 bool
     LedReactor::verbose = false,
     LedReactor::connected = false,
@@ -10,7 +10,7 @@ uint32_t LedReactor::statusIndex = 0;
 
 LedReactor::LedReactor() {}
 
-LedReactor::LedReactor(LedWriter& ledWriter) {
+LedReactor::LedReactor(LedWriter<4>& ledWriter) {
     writer = &ledWriter;
 }
 
@@ -39,14 +39,19 @@ void LedReactor::monitorMesh() {
     }
 }
 
-void LedReactor::init(uint8_t redPin, uint8_t greenPin, uint8_t bluePin, uint8_t resolution) {
+void LedReactor::init(
+        uint8_t redPin, uint8_t greenPin,
+        uint8_t bluePin, uint8_t whitePin,
+        uint8_t resolution
+    ) {
     // Static initializer; required, since so many static elements exist.
     prints("Initializing LedReactor...");
     mesh.setDebugMsgTypes(ERROR | STARTUP | CONNECTION);
     mesh.init(MESH_PREFIX, MESH_PASSWORD, MESH_PORT, WIFI_STA);
     if (writer == nullptr) {
         prints("Creating LedWriter");
-        writer = new LedWriter(redPin, greenPin, bluePin, resolution, true);
+        std::array<uint8_t, 4> pins = {redPin, greenPin, bluePin, whitePin};
+        writer = new LedWriter<4>(pins, resolution, true);
     }
     staticVerbose = verbose;
     writer->verbose = verbose;
