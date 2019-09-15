@@ -123,9 +123,9 @@ void parseMessage(const char* json, std::string targetRecipient) {
         if (parser["restartBridge"]) {
             ESP.restart();
         }
-        JsonArray& color = parser["rgb"];
-        std::array<uint16_t, 3> target = {color[0], color[1], color[2]};
-        Serial.printf("Received Target R: %u G: %u B: %u\n", target[0], target[1], target[2]);
+        JsonArray& color = parser["rgbw"];
+        std::array<uint16_t, 4> target = {color[0], color[1], color[2], color[3]};
+        Serial.printf("Received Target R: %u G: %u B: %u W: %u\n", target[0], target[1], target[2], target[3]);
         JsonArray& effect = parser["fx"];
         if (effect.success()) {
             // Extract relative start time in seconds
@@ -144,7 +144,7 @@ void parseMessage(const char* json, std::string targetRecipient) {
             outgoing["fx"] = effect;
         }
         std::vector<const char*> keys = {
-                "rgb", "fx", "test", "status", "clear",
+                "rgbw", "fx", "test", "status", "clear",
                 "save", "recall", "restart"
             };
         for (auto key: keys) {

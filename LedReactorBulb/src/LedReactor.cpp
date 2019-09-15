@@ -84,12 +84,12 @@ void LedReactor::parseMessage(const char* json) {
     JsonObject& parser = buffer.parseObject(json);
     prints("Parsing message...", "");
     if (parser.success()) {
-        JsonArray &color = parser["rgb"], &effect = parser["fx"];
-        std::array<uint16_t, 3> target = writer->getCurrent();
+        JsonArray &color = parser["rgbw"], &effect = parser["fx"];
+        std::array<uint16_t, 4> target = writer->getCurrent();
         if (color.success()) {
-            target = {color[0], color[1], color[2]};
+            target = {color[0], color[1], color[2], color[3]};
             if (verbose) {
-                sout << "\tR: " << target[0] << " G: " << target[1] << " B: " << target[2] << std::endl;
+                sout << "\tR: " << target[0] << " G: " << target[1] << " B: " << target[2] << " W: " << target[3] << std::endl;
             }
         } else {
             prints("");
@@ -139,14 +139,14 @@ void LedReactor::parseMessage(const char* json) {
             int mode = effect[8];
             double width = effect[9];
             int32_t loop = effect[10];
-            std::array<uint16_t, 3> inverse = {effect[11], effect[12], effect[13]};
+            std::array<uint16_t, 4> inverse = {effect[11], effect[12], effect[13], effect[14]};
             duration = selectMode(mode, duration);
             double inverseWidth = selectMode(mode, width);
             repetitions = repetitions > 0 ? repetitions : 1;
             if (recall && (repetitions > 1)) {
                 recall = false;
                 writer->globalSave->enable(
-                        uid, (uid + ((repetitions - 1) * 2))
+                        uid, static_cast<uint32_t>(uid + ((repetitions - 1) * 2))
                     );
             }
             // Use loop for mode 1
@@ -162,7 +162,7 @@ void LedReactor::parseMessage(const char* json) {
             //     }
             // }
             for (int i = 0; i < repetitions; i++) {
-                Effect* created = writer->createEffectAbsolute(
+                Effect<4>* created = writer->createEffectAbsolute(
                         target, duration, recall, start,
                         startVariation, durationVariation,
                         uid, updateUID, loop
@@ -173,7 +173,7 @@ void LedReactor::parseMessage(const char* json) {
                     if ((mode > 0) && (created != nullptr)) {
                         created->hold(width, 1);
                     }
-                    Effect* created = writer->createEffectAbsolute(
+                    Effect<4>* created = writer->createEffectAbsolute(
                             inverse, inverseWidth, recall, start,
                             startVariation, durationVariation,
                             ++uid, updateUID, loop

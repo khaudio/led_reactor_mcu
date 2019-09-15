@@ -31,11 +31,10 @@ void setup()
     Serial.begin(921600);
     reactor.verbose = true;
     LedReactor::init(13, 12, 15, 27, 10);
+    reactor.writer->cycle(2.5);
 }
 
 void loop()
 {
-
-    reactor.writer->cycle(2.5);
     LedReactor::run();
 }
