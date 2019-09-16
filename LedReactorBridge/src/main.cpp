@@ -28,6 +28,7 @@
 #include <PubSubClient.h>
 #include "Private.h"
 #include <WiFiClient.h>
+#include <stdlib.h>
 // #include <ESPAsyncUDP.h>
 // #include <ESP8266SSDP.h>
 
@@ -96,11 +97,18 @@ void initialize() {
 
 
 void publish(const char* message) {
-    mqttClient->publish((std::string("reactor/from/") + hostname).c_str(), message);
+    mqttClient->publish(
+            (std::string("reactor/from/") + MESH_SUBGROUP + "/" + hostname).c_str(),
+            message
+        );
+    Serial.printf(
+            "\nPublishing to: %s:\n\n\t%s\n\n",
+            (std::string("reactor/from/") + hostname).c_str(),
+            message
+        );
 }
 
 
-// void copyValues(JsonObject& parser, JsonObject& outgoing, const char* key) {
 void copyValues(
         StaticJsonDocument<jsonBufferCapacity>& parser,
         StaticJsonDocument<jsonBufferCapacity>& outgoing,
@@ -117,14 +125,13 @@ void copyValues(
 
 
 void parseMessage(const char* json, std::string targetRecipient) {
-    // StaticJsonBuffer<jsonBufferCapacity> buffer;
-    // JsonObject& parser = buffer.parseObject(json);
-    // if (parser.success()) {
     StaticJsonDocument<jsonBufferCapacity> parser;
+    std::vector<const char*> keys = {
+            "rgbw", "fx", "test", "status", "clear",
+            "save", "recall", "restart"
+        };
     auto error = deserializeJson(parser, json);
     if (!error) {
-        // StaticJsonBuffer<jsonBufferCapacity> outgoingBuffer;
-        // JsonObject& outgoing = outgoingBuffer.createObject();
         StaticJsonDocument<jsonBufferCapacity> outgoing;
         char serialized[512];
         if (parser["test"]) {
@@ -133,14 +140,13 @@ void parseMessage(const char* json, std::string targetRecipient) {
         if (parser["restartBridge"]) {
             ESP.restart();
         }
-        // JsonArray& color = parser["rgbw"];
-        JsonArray color = parser["rgbw"];
-        std::array<uint16_t, 4> target = {color[0], color[1], color[2], color[3]};
-        Serial.printf("Received Target R: %u G: %u B: %u W: %u\n", target[0], target[1], target[2], target[3]);
-        // JsonArray& effect = parser["fx"];
-        JsonArray effect = parser["fx"];
-        // if (effect.success()) {
-        if (parser["fx"]) {
+        if (parser.containsKey("rgbw")) {
+            JsonArray color = parser["rgbw"];
+            std::array<uint16_t, 4> target = {color[0], color[1], color[2], color[3]};
+            Serial.printf("Received Target R: %u G: %u B: %u W: %u\n", target[0], target[1], target[2], target[3]);
+        }
+        if (parser.containsKey("fx")) {
+            JsonArray effect = parser["fx"];
             // Extract relative start time in seconds
             double start = effect[2];
             // Extract duration in seconds
@@ -156,29 +162,33 @@ void parseMessage(const char* json, std::string targetRecipient) {
             // Copy effect settings to output buffer
             outgoing["fx"] = effect;
         }
-        std::vector<const char*> keys = {
-                "rgbw", "fx", "test", "status", "clear",
-                "save", "recall", "restart"
-            };
+        if (parser.containsKey("status")) {
+            char buffer[11];
+            std::string response("Status request received; absolute mesh time: ");
+            sprintf(buffer, "%u", mesh.getNodeTime());
+            response += buffer;
+            publish(response.c_str());
+        } else if (parser.containsKey("time")) {
+            char buffer[11];
+            publish(itoa(mesh.getNodeTime(), buffer, 10));
+        }
+        bool empty(true);
         for (auto key: keys) {
             copyValues(parser, outgoing, key);
+            if (empty && (outgoing[key] != (char*)NULL)) {
+                empty = false;
+            }
         }
-        // outgoing.printTo(serialized);
-        // String toMesh(serialized);
-        // Serial.printf("serialized: %s\n", toMesh.c_str());
         serializeJson(outgoing, serialized);
         Serial.printf("Serialized: %s\n", serialized);
         // Broadcast to mesh
-        if (targetRecipient == "broadcast") {
-            // mesh.sendBroadcast(toMesh);
+        if (!empty && (targetRecipient == "broadcast")) {
             mesh.sendBroadcast(serialized);
             Serial.println("Broadcast message sent");
         }
         Serial.println("Message parsed successfully\n");
     } else {
         Serial.println("Message parsing failed\n");
-        // String forward(json);
-        // mesh.sendBroadcast(forward);
         mesh.sendBroadcast(json);
     }
 }
@@ -188,13 +198,12 @@ void receiveMqtt(char* topic, uint8_t* payload, unsigned int length) {
     char interpreted[length];
     memcpy(interpreted, payload, length);
     interpreted[length] = '\0';
-    String message(interpreted);
     std::string incomingTopic(topic);
     std::string group = incomingTopic.substr(11, 6);
     std::string targetRecipient = incomingTopic.substr(18);
     Serial.printf("Subgroup: %s\tTarget: %s\t", group.c_str(), targetRecipient.c_str());
     if (group == MESH_SUBGROUP) {
-        parseMessage(message.c_str(), targetRecipient);
+        parseMessage(interpreted, targetRecipient);
     } else {
         Serial.println("Group mismatch");
     }
