@@ -80,13 +80,20 @@ double LedReactor::selectMode(int mode, double duration) {
 
 void LedReactor::parseMessage(const char* json) {
     // Parses messages received by mesh and applies them
-    StaticJsonBuffer<2048> buffer;
-    JsonObject& parser = buffer.parseObject(json);
     prints("Parsing message...", "");
-    if (parser.success()) {
-        JsonArray &color = parser["rgbw"], &effect = parser["fx"];
+    // ArduinoJson 5.x
+    // StaticJsonBuffer<2048> buffer;
+    // JsonObject& parser = buffer.parseObject(json);
+    // ArudinoJson 6.x
+    // if (parser.success()) {
+        // JsonArray &color = parser["rgbw"], &effect = parser["fx"];
+    StaticJsonDocument<2048> parser;
+    auto error = deserializeJson(parser, json);
+    if (!error) {
+        JsonArray color = parser["rgbw"], effect = parser["fx"];
         std::array<uint16_t, 4> target = writer->getCurrent();
-        if (color.success()) {
+        // if (color.success()) {
+        if (parser["rgbw"]) {
             target = {color[0], color[1], color[2], color[3]};
             if (verbose) {
                 sout << "\tR: " << target[0] << " G: " << target[1] << " B: " << target[2] << " W: " << target[3] << std::endl;
@@ -126,7 +133,8 @@ void LedReactor::parseMessage(const char* json) {
             writer->recall();
             prints("Recalled");
         }
-        if (effect.success()) {
+        // if (effect.success()) {
+        if (parser["fx"]) {
             prints("Parsing effect...");
             double duration = effect[0];
             bool recall = effect[1];
@@ -188,7 +196,8 @@ void LedReactor::parseMessage(const char* json) {
                 }
             }
             prints("Set effect");
-        } else if (color.success()) {
+        // } else if (color.success()) {
+        } else if (parser["rgbw"]) {
             prints("Effect parsing failed");
             if (writer->looping() == -1) {
                 prints("Updating looping effect targets");

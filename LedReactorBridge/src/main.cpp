@@ -100,9 +100,16 @@ void publish(const char* message) {
 }
 
 
-void copyValues(JsonObject& parser, JsonObject& outgoing, const char* key) {
+// void copyValues(JsonObject& parser, JsonObject& outgoing, const char* key) {
+void copyValues(
+        StaticJsonDocument<jsonBufferCapacity>& parser,
+        StaticJsonDocument<jsonBufferCapacity>& outgoing,
+        const char* key
+    ) {
     if (parser.containsKey(key)) {
-        outgoing[key] = parser[key];
+        if (!outgoing.containsKey(key)) {
+            outgoing[key] = parser[key];
+        }
     } else {
         outgoing[key] = (char*)NULL;
     }
@@ -110,24 +117,30 @@ void copyValues(JsonObject& parser, JsonObject& outgoing, const char* key) {
 
 
 void parseMessage(const char* json, std::string targetRecipient) {
-    StaticJsonBuffer<jsonBufferCapacity> buffer;
-    // StaticJsonDocument<jsonBufferCapacity> buffer;
-    JsonObject& parser = buffer.parseObject(json);
-    if (parser.success()) {
-        StaticJsonBuffer<jsonBufferCapacity> outgoingBuffer;
-        JsonObject& outgoing = outgoingBuffer.createObject();
-        char serialized[1024];
+    // StaticJsonBuffer<jsonBufferCapacity> buffer;
+    // JsonObject& parser = buffer.parseObject(json);
+    // if (parser.success()) {
+    StaticJsonDocument<jsonBufferCapacity> parser;
+    auto error = deserializeJson(parser, json);
+    if (!error) {
+        // StaticJsonBuffer<jsonBufferCapacity> outgoingBuffer;
+        // JsonObject& outgoing = outgoingBuffer.createObject();
+        StaticJsonDocument<jsonBufferCapacity> outgoing;
+        char serialized[512];
         if (parser["test"]) {
             publish("Remote bridge node test successful");
         }
         if (parser["restartBridge"]) {
             ESP.restart();
         }
-        JsonArray& color = parser["rgbw"];
+        // JsonArray& color = parser["rgbw"];
+        JsonArray color = parser["rgbw"];
         std::array<uint16_t, 4> target = {color[0], color[1], color[2], color[3]};
         Serial.printf("Received Target R: %u G: %u B: %u W: %u\n", target[0], target[1], target[2], target[3]);
-        JsonArray& effect = parser["fx"];
-        if (effect.success()) {
+        // JsonArray& effect = parser["fx"];
+        JsonArray effect = parser["fx"];
+        // if (effect.success()) {
+        if (parser["fx"]) {
             // Extract relative start time in seconds
             double start = effect[2];
             // Extract duration in seconds
@@ -150,19 +163,23 @@ void parseMessage(const char* json, std::string targetRecipient) {
         for (auto key: keys) {
             copyValues(parser, outgoing, key);
         }
-        outgoing.printTo(serialized);
-        String toMesh(serialized);
-        Serial.printf("serialized: %s\n", toMesh.c_str());
+        // outgoing.printTo(serialized);
+        // String toMesh(serialized);
+        // Serial.printf("serialized: %s\n", toMesh.c_str());
+        serializeJson(outgoing, serialized);
+        Serial.printf("Serialized: %s\n", serialized);
         // Broadcast to mesh
         if (targetRecipient == "broadcast") {
-            mesh.sendBroadcast(toMesh);
+            // mesh.sendBroadcast(toMesh);
+            mesh.sendBroadcast(serialized);
             Serial.println("Broadcast message sent");
         }
         Serial.println("Message parsed successfully\n");
     } else {
         Serial.println("Message parsing failed\n");
-        String forward(json);
-        mesh.sendBroadcast(forward);
+        // String forward(json);
+        // mesh.sendBroadcast(forward);
+        mesh.sendBroadcast(json);
     }
 }
 
@@ -268,7 +285,6 @@ void run() {
 }
 
 
-
 void setup() {
     Serial.begin(921600);
     Serial.println("Initializing...");
@@ -281,12 +297,11 @@ void setup() {
 
 void loop() {
     run();
-    static int i = 0;
-    if (i % 500000 == 0) {
+    static int i(0);
+    if (++i % 500000 == 0) {
         Serial.print("Looping...\t");
         Serial.println(mesh.getNodeTime());
     }
-    i++;
     // scheduler.execute();
     // if (!infoReceiver.connected()) {
     //     infoReceiver = server.available();

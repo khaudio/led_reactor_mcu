@@ -31,7 +31,9 @@ void setup()
     Serial.begin(921600);
     reactor.verbose = true;
     LedReactor::init(13, 12, 15, 27, 10);
+
     reactor.writer->cycle(2.5);
+    reactor.writer->set(std::array<uint16_t, 4>{0, 0, 0, 255});
 }
 
 void loop()
