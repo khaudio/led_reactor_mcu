@@ -142,8 +142,9 @@ void parseMessage(const char* json, std::string targetRecipient) {
         }
         if (parser.containsKey("rgbw")) {
             JsonArray color = parser["rgbw"];
-            std::array<uint16_t, 4> target = {color[0], color[1], color[2], color[3]};
-            Serial.printf("Received Target R: %u G: %u B: %u W: %u\n", target[0], target[1], target[2], target[3]);
+            outgoing["rgbw"] = color;
+            // std::array<uint16_t, 4> target = {color[0], color[1], color[2], color[3]};
+            Serial.printf("Received Target R: %u G: %u B: %u W: %u\n", color[0], color[1], color[2], color[3]);
         }
         if (parser.containsKey("fx")) {
             JsonArray effect = parser["fx"];
