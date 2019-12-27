@@ -24,19 +24,39 @@ TODO:
 
 #include "LedReactor.h"
 
+// Set verbosity for testing
+#define VERBOSE         true
+
+// Create reactor object
 LedReactor reactor;
 
 void setup()
 {
-    Serial.begin(921600);
-    reactor.verbose = true;
-    LedReactor::init(13, 12, 15, 27, 10);
+    // Only start serial if testing; Serial calls can slow down operation
+    #if VERBOSE
+        Serial.begin(921600);
+    #endif
+    reactor.verbose = VERBOSE;
 
+    LedReactor::init(
+            13,     // Red pin
+            12,     // Green pin
+            15,     // Blue pin
+            27,     // White pin
+            10      // Bit depth
+        );
+
+    // Cycle once to signify boot/reboot
     reactor.writer->cycle(2.5);
+
+    /* Set initial values to dimmed white (full power produces too much heat)
+    This level of white can be overridden, but produces sufficient default
+    levels of light */
     reactor.writer->set(std::array<uint16_t, 4>{0, 0, 0, 255});
 }
 
 void loop()
 {
+    // Required to be called in loop for proper operation
     LedReactor::run();
 }

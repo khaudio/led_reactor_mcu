@@ -175,8 +175,37 @@ void LedReactor::parseMessage(const char* json) {
                         startVariation, durationVariation,
                         uid, updateUID, loop
                     );
+
+
+                Serial.println("\nEFFECT:\n");
+                Serial.println("target: ");
+                for (auto val: target)
+                {
+                    Serial.print(val);
+                    Serial.print(" ");
+                }
+                Serial.print("\n");
+                Serial.println("duration: ");
+                Serial.println(duration);
+                Serial.println("recall: ");
+                Serial.println(recall);
+                Serial.println("start: ");
+                Serial.println(start);
+                Serial.println("startVariation: ");
+                Serial.println(startVariation);
+                Serial.println("durationVariation: ");
+                Serial.println(durationVariation);
+                Serial.println("uid: ");
+                Serial.println(uid);
+                Serial.println("updateUID: ");
+                Serial.println(updateUID);
+                Serial.println("loop: ");
+                Serial.println(loop);
+                Serial.println("\n\n\n");
+
                 if (i < (repetitions - 1)) {
-                    width = width ? width : duration;
+                    // width = ((width > 0) ? width : duration);
+                    inverseWidth = ((inverseWidth > 0) ? inverseWidth : duration);
                     start += static_cast<uint32_t>(duration * 1000000);
                     if ((mode > 0) && (created != nullptr)) {
                         created->hold(width, 1);
@@ -186,6 +215,35 @@ void LedReactor::parseMessage(const char* json) {
                             startVariation, durationVariation,
                             ++uid, updateUID, loop
                         );
+
+                    Serial.println("\nINVERSE:\n");
+                    Serial.println("inverse: ");
+                    for (auto val: inverse)
+                    {
+                        Serial.print(val);
+                        Serial.print(" ");
+                    }
+
+                    Serial.print("\n");
+                    Serial.println("inverseWidth: ");
+                    Serial.println(inverseWidth);
+                    Serial.println("recall: ");
+                    Serial.println(recall);
+                    Serial.println("start: ");
+                    Serial.println(start);
+                    Serial.println("startVariation: ");
+                    Serial.println(startVariation);
+                    Serial.println("durationVariation: ");
+                    Serial.println(durationVariation);
+                    Serial.println("uid: ");
+                    Serial.println(uid);
+                    Serial.println("updateUID: ");
+                    Serial.println(updateUID);
+                    Serial.println("loop: ");
+                    Serial.println(loop);
+                    Serial.println("\n\n\n");
+
+
                     start += static_cast<uint32_t>(width * 1000000);
                     if ((mode > 0) && (created != nullptr)) {
                         created->hold(width, 1);
