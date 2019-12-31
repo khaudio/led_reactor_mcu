@@ -25,7 +25,7 @@ TODO:
 #include "LedReactor.h"
 
 // Set verbosity for testing
-#define VERBOSE         true
+#define VERBOSE         false
 
 // Create reactor object
 LedReactor reactor;

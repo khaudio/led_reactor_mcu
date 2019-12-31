@@ -81,18 +81,11 @@ double LedReactor::selectMode(int mode, double duration) {
 void LedReactor::parseMessage(const char* json) {
     // Parses messages received by mesh and applies them
     prints("Parsing message...", "");
-    // ArduinoJson 5.x
-    // StaticJsonBuffer<2048> buffer;
-    // JsonObject& parser = buffer.parseObject(json);
-    // ArudinoJson 6.x
-    // if (parser.success()) {
-        // JsonArray &color = parser["rgbw"], &effect = parser["fx"];
     StaticJsonDocument<2048> parser;
     auto error = deserializeJson(parser, json);
     if (!error) {
         JsonArray color = parser["rgbw"], effect = parser["fx"];
         std::array<uint16_t, 4> target = writer->getCurrent();
-        // if (color.success()) {
         if (parser["rgbw"]) {
             target = {color[0], color[1], color[2], color[3]};
             if (verbose) {
@@ -133,7 +126,6 @@ void LedReactor::parseMessage(const char* json) {
             writer->recall();
             prints("Recalled");
         }
-        // if (effect.success()) {
         if (parser["fx"]) {
             prints("Parsing effect...");
             double duration = effect[0];
@@ -157,54 +149,13 @@ void LedReactor::parseMessage(const char* json) {
                         uid, static_cast<uint32_t>(uid + ((repetitions - 1) * 2))
                     );
             }
-            // Use loop for mode 1
-            // Effect* created = writer->createEffectAbsolute(
-            //         target, duration, recall, start,
-            //         startVariation, durationVariation,
-            //         uid, updateUID, loop
-            //     );
-            // if (repetitions > 1 || loop > 0) {
-            //     start += static_cast<uint32_t>(duration * 1000000);
-            //     if (mode == 1) {
-            //         created->hold(width, 1);
-            //     }
-            // }
             for (int i = 0; i < repetitions; i++) {
                 Effect<4>* created = writer->createEffectAbsolute(
                         target, duration, recall, start,
                         startVariation, durationVariation,
                         uid, updateUID, loop
                     );
-
-
-                Serial.println("\nEFFECT:\n");
-                Serial.println("target: ");
-                for (auto val: target)
-                {
-                    Serial.print(val);
-                    Serial.print(" ");
-                }
-                Serial.print("\n");
-                Serial.println("duration: ");
-                Serial.println(duration);
-                Serial.println("recall: ");
-                Serial.println(recall);
-                Serial.println("start: ");
-                Serial.println(start);
-                Serial.println("startVariation: ");
-                Serial.println(startVariation);
-                Serial.println("durationVariation: ");
-                Serial.println(durationVariation);
-                Serial.println("uid: ");
-                Serial.println(uid);
-                Serial.println("updateUID: ");
-                Serial.println(updateUID);
-                Serial.println("loop: ");
-                Serial.println(loop);
-                Serial.println("\n\n\n");
-
                 if (i < (repetitions - 1)) {
-                    // width = ((width > 0) ? width : duration);
                     inverseWidth = ((inverseWidth > 0) ? inverseWidth : duration);
                     start += static_cast<uint32_t>(duration * 1000000);
                     if ((mode > 0) && (created != nullptr)) {
@@ -215,35 +166,6 @@ void LedReactor::parseMessage(const char* json) {
                             startVariation, durationVariation,
                             ++uid, updateUID, loop
                         );
-
-                    Serial.println("\nINVERSE:\n");
-                    Serial.println("inverse: ");
-                    for (auto val: inverse)
-                    {
-                        Serial.print(val);
-                        Serial.print(" ");
-                    }
-
-                    Serial.print("\n");
-                    Serial.println("inverseWidth: ");
-                    Serial.println(inverseWidth);
-                    Serial.println("recall: ");
-                    Serial.println(recall);
-                    Serial.println("start: ");
-                    Serial.println(start);
-                    Serial.println("startVariation: ");
-                    Serial.println(startVariation);
-                    Serial.println("durationVariation: ");
-                    Serial.println(durationVariation);
-                    Serial.println("uid: ");
-                    Serial.println(uid);
-                    Serial.println("updateUID: ");
-                    Serial.println(updateUID);
-                    Serial.println("loop: ");
-                    Serial.println(loop);
-                    Serial.println("\n\n\n");
-
-
                     start += static_cast<uint32_t>(width * 1000000);
                     if ((mode > 0) && (created != nullptr)) {
                         created->hold(width, 1);
@@ -254,7 +176,6 @@ void LedReactor::parseMessage(const char* json) {
                 }
             }
             prints("Set effect");
-        // } else if (color.success()) {
         } else if (parser["rgbw"]) {
             prints("Effect parsing failed");
             if (writer->looping() == -1) {
@@ -283,7 +204,7 @@ void LedReactor::updateLeds(void* parameter) {
         uint32_t timeIndex = mesh.getNodeTime();
         writer->updateClock(&timeIndex);
         writer->run();
-        vTaskDelay(2);
+        vTaskDelay(2); // Ideally, use vTaskDelayUntil()
     }
 }
 
