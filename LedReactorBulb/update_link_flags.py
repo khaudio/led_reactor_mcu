@@ -8,6 +8,7 @@ env = DefaultEnvironment()
 
 env.Append(
     LINKFLAGS=[
-        '-std=c++17'
+        '-std=c++17',
+        '-O3'
     ]
 )

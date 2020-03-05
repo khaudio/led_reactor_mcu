@@ -6,6 +6,6 @@
 .gcc-flags.json
 .travis.yml
 .vscode
-Private.h
+# Private.h
 other
 LedWriter

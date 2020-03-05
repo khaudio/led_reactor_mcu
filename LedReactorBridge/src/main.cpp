@@ -296,7 +296,7 @@ void run() {
 
 
 void setup() {
-    Serial.begin(921600);
+    // Serial.begin(921600);
     Serial.println("Initializing...");
     initialize();
     Serial.println("Initialized");

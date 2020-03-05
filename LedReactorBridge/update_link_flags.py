@@ -9,6 +9,7 @@ env = DefaultEnvironment()
 env.Append(
     LINKFLAGS=[
         '-std=c++17',
-        '-D MQTT_MAX_PACKET_SIZE=1024'
+        '-D MQTT_MAX_PACKET_SIZE=1024',
+        '-O3'
     ]
 )
